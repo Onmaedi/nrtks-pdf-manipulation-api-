@@ -1,0 +1,3 @@
+[default]
+TITLE = "NRTKS-PDF"
+EXTENSIONS = ["src.v1.pdf:init_app"]
