@@ -9,8 +9,8 @@ def minimal_app():
     return app
 
 
-def create_app(**config):
-    print(config)
+def create_app():
+    print("APP INITIALIZED")
     app = minimal_app()
     FlaskDynaconf(app)
     app.config.load_extensions()
