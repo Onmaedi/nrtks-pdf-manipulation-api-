@@ -47,7 +47,6 @@ class PdfMergerDropbox(Resource):
         try:
             request_body = json.loads(request.data)
 
-            print(request_body)
             tmp_folder_name = str(uuid4())
 
             tmp_folder_path = path.join(path.abspath(""), tmp_folder_name)
