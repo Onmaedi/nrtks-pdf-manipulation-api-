@@ -1,10 +1,10 @@
-# Neuroteks PDf Manipulation API
+# Neuroteks PDF Manipulation API
 
 [@author.github](https://github.com/Onmaedi/)
 
 [@author.mail](mailto:http://gmail.com/)
 
-### nrtks-pdf-manipulation-api
+### ntks-pdf-manipulation-api
 
 # Instalação
 
@@ -22,7 +22,7 @@ python3 -m pip install pipenv
 2. Clone o repositório.
 
 ```bash
-git clone https://github.com/Onmaedi/nrtks-pdf-manipulation-api.git
+git clone https://github.com/Onmaedi/ntks-pdf-manipulation-api.git
 ```
 
 3. Dentro do diretório execute:
