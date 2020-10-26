@@ -19,14 +19,19 @@ class PdfWriter(Resource):
             existing_pdf = PdfFileReader(open(pdf_file_path, "rb"))
             if existing_pdf.pages.lengthFunction() == 0:
                 return ""
-            *_, width, heigth = existing_pdf.pages[0].mediaBox
+            heigth = int(existing_pdf.pages.getFunction(
+                0).mediaBox.getHeight())
+            width = int(existing_pdf.pages.getFunction(0).mediaBox.getWidth())
+
             packet = io.BytesIO()
+
+            num_pages = existing_pdf.getNumPages()
 
             can = canvas.Canvas(packet, pagesize=letter)
 
             for multiplier, text in enumerate(content_text):
                 y_pos = heigth - 10 * (multiplier + 1)
-                can.drawRightString(width - 5, y_pos, text)
+                can.drawRightString(int(width) - 5, y_pos, text)
             can.save()
 
             packet.seek(0)
@@ -34,9 +39,10 @@ class PdfWriter(Resource):
 
             output = PdfFileWriter()
 
-            page = existing_pdf.getPage(0)
-            page.mergePage(new_pdf.getPage(0))
-            output.addPage(page)
+            for count in range(num_pages):
+                page = existing_pdf.getPage(count)
+                page.mergePage(new_pdf.getPage(0))
+                output.addPage(page)
 
             new_pdf_path = path.join(tmp_folder_path, f"{str(uuid4())}.pdf")
 
@@ -46,7 +52,8 @@ class PdfWriter(Resource):
 
             return new_pdf_path
 
-        except:
+        except Exception as exc:
+            print(exc)
             return ""
 
     def post(self):
@@ -67,6 +74,13 @@ class PdfWriter(Resource):
 
             new_file_path = self.write(
                 temp_file_path, content_text, tmp_folder_path)
+
+            if not new_file_path:
+                os.remove(temp_file_path)
+                os.rmdir(tmp_folder_path)
+                return jsonify({
+                    "base64file": ""
+                })
 
             with open(new_file_path, "rb") as pdf_file:
                 new_pdf_base64 = str(
