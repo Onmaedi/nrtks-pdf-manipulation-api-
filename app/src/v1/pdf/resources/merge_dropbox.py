@@ -21,7 +21,7 @@ class DropboxFileHandler:
             tmp_file_name = f"{str(uuid4())}{extension}"
             tmp_file_path = path.join(tmp_folder_path, tmp_file_name)
 
-            *_, response = self.__dropbox.files_download(
+            res, response = self.__dropbox.files_download(
                 path=dropbox_file_path)
 
             with open(tmp_file_path, "wb+") as temp_file:
@@ -29,11 +29,13 @@ class DropboxFileHandler:
 
             return tmp_file_path
         except:
-            return ""
+            return False
 
 
 class PdfMergerDropbox(Resource):
     def merger(self, tmp_folder_path, files_path: list = []) -> str:
+        if not files_path:
+            return ""
         merger = PyPDF2.PdfFileMerger()
 
         output_path = path.join(f"{tmp_folder_path}", f"{str(uuid4())}.pdf")
@@ -56,9 +58,15 @@ class PdfMergerDropbox(Resource):
             tmp_files = []
             for file in request_body["files"]:
                 tmp_file_path = DropboxFileHandler().download(file, tmp_folder_path)
-                tmp_files.append(tmp_file_path)
+                if tmp_file_path:
+                    tmp_files.append(tmp_file_path)
 
             merged_file_path = self.merger(tmp_folder_path, tmp_files)
+
+            if not merged_file_path:
+                return jsonify({
+                    "base64file": ""
+                })
 
             tmp_files.append(merged_file_path)
 
@@ -74,5 +82,6 @@ class PdfMergerDropbox(Resource):
                 "base64file": merged_pdf_base64
             })
 
-        except:
+        except Exception as e:
+            print(e)
             abort(500)

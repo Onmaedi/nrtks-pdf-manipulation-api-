@@ -75,9 +75,9 @@ class MergeDropboxFolder(Resource):
                 merged_pdf_base64 = str(
                     base64.b64encode(merged.read()), 'utf-8')
 
-            for tmp_file in tmp_files:
-                os.remove(tmp_file)
-            os.rmdir(tmp_folder_path)
+            # for tmp_file in tmp_files:
+            #     os.remove(tmp_file)
+            # os.rmdir(tmp_folder_path)
 
             return jsonify({
                 "filesMerged": merged_files,

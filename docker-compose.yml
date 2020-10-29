@@ -9,6 +9,8 @@ services:
         restart: always
         expose:
             - 8080
+        volumes:
+            - ./app/:/app
 
     nginx:
         build:
@@ -19,4 +21,5 @@ services:
         ports:
             - "80:80"
         volumes:
+            - ./nginx/default.conf:/etc/nginx/conf.d/000-default.conf
             - ./logs/:/var/log/nginx
