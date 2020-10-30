@@ -4,7 +4,7 @@ import json
 import base64
 from uuid import uuid4
 
-from flask import request, jsonify, abort
+from flask import request, jsonify, abort, Response
 from flask_restful import Resource
 import dropbox
 from dropbox.files import ListFolderResult, FileMetadata
@@ -36,6 +36,12 @@ class DropboxFileHandler:
         files = self.__dropbox.files_list_folder(folder_path)
         return files
 
+    def exists_folder(self, folder_path) -> bool:
+        try:
+            self.__dropbox.files_get_metadata(folder_path)
+            return True
+        except:
+            return False
 
 class MergeDropboxFolder(Resource):
     def __init__(self):
@@ -61,6 +67,10 @@ class MergeDropboxFolder(Resource):
 
             request_body = json.loads(request.data)
             folder_path = request_body["folderPath"]
+
+            if not DropboxFileHandler().exists_folder(folder_path):
+                return jsonify({"message": "This folder could not be found."})
+
             files = DropboxFileHandler().folder_list_files(folder_path)
             for file in files.entries:
                 tmp_files.append(DropboxFileHandler().download(
@@ -75,9 +85,9 @@ class MergeDropboxFolder(Resource):
                 merged_pdf_base64 = str(
                     base64.b64encode(merged.read()), 'utf-8')
 
-            # for tmp_file in tmp_files:
-            #     os.remove(tmp_file)
-            # os.rmdir(tmp_folder_path)
+            for tmp_file in tmp_files:
+                os.remove(tmp_file)
+            os.rmdir(tmp_folder_path)
 
             return jsonify({
                 "filesMerged": merged_files,
