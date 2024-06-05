@@ -1,13 +1,14 @@
 import os
 from os import path
 import json
+import base64
+from uuid import uuid4
 
-from flask import jsonify, request, abort, current_app
+from flask import request, jsonify, abort, Response
 from flask_restful import Resource
 import dropbox
-from uuid import uuid4
+from dropbox.files import ListFolderResult, FileMetadata
 import PyPDF2
-import base64
 
 
 class DropboxFileHandler:
@@ -29,10 +30,23 @@ class DropboxFileHandler:
 
             return tmp_file_path
         except:
-            return ""
+            ...
 
+    def folder_list_files(self, folder_path: str) -> ListFolderResult:
+        files = self.__dropbox.files_list_folder(folder_path)
+        return files
 
-class PdfMergerDropbox(Resource):
+    def exists_folder(self, folder_path) -> bool:
+        try:
+            self.__dropbox.files_get_metadata(folder_path)
+            return True
+        except:
+            return False
+
+class MergeDropboxFolder(Resource):
+    def __init__(self):
+        ...
+
     def merger(self, tmp_folder_path, files_path: list = []) -> str:
         merger = PyPDF2.PdfFileMerger()
 
@@ -45,24 +59,29 @@ class PdfMergerDropbox(Resource):
 
     def post(self):
         try:
-            request_body = json.loads(request.data)
-
             tmp_folder_name = str(uuid4())
-
             tmp_folder_path = path.join(path.abspath(""), tmp_folder_name)
-
             os.makedirs(tmp_folder_path)
-
             tmp_files = []
-            for file in request_body["files"]:
-                tmp_file_path = DropboxFileHandler().download(file, tmp_folder_path)
-                tmp_files.append(tmp_file_path)
+            merged_files = []
 
-            merged_file_path = self.merger(tmp_folder_path, tmp_files)
+            request_body = json.loads(request.data)
+            folder_path = request_body["folderPath"]
 
-            tmp_files.append(merged_file_path)
+            if not DropboxFileHandler().exists_folder(folder_path):
+                return jsonify({"message": "This folder could not be found."})
 
-            with open(merged_file_path, "rb") as merged:
+            files = DropboxFileHandler().folder_list_files(folder_path)
+            for file in files.entries:
+                tmp_files.append(DropboxFileHandler().download(
+                    file.path_display, tmp_folder_path))
+                merged_files.append(file.path_display)
+
+            tmp_merged_file_path = self.merger(tmp_folder_path, tmp_files)
+
+            tmp_files.append(tmp_merged_file_path)
+
+            with open(tmp_merged_file_path, "rb") as merged:
                 merged_pdf_base64 = str(
                     base64.b64encode(merged.read()), 'utf-8')
 
@@ -71,8 +90,8 @@ class PdfMergerDropbox(Resource):
             os.rmdir(tmp_folder_path)
 
             return jsonify({
+                "filesMerged": merged_files,
                 "base64file": merged_pdf_base64
             })
-
         except:
             abort(500)
